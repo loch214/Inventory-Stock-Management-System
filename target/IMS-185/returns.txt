@@ -1,0 +1,2 @@
+RET-20250518-001,2025001,Chocolate,1,2025-05-18,changed_mind,pending
+RET-20250518-002,2025001,Chocolate,3,2025-05-18,damaged,pending

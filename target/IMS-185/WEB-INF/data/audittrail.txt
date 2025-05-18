@@ -1,0 +1,12 @@
+9e09fbeb-2e60-4a41-b249-2f61fb441201,loki,logged in,successfully,2025-05-18T15:10:02.577973200
+34e383c2-524d-47b3-b42b-5d53daefae84,loki,added,item Chocolate (quantity: 10),2025-05-18T15:11:15.204981900
+952595ec-8bfb-4c8a-92d4-913b7fb6ecdc,loki,added,item Milo (quantity: 100),2025-05-18T15:11:55.030607200
+b37e97a4-5598-4802-bbd8-fd4519e4a3e2,loki,generated,stock levels report,2025-05-18T15:12:26.818569300
+e7605e62-3400-4f37-bf47-79ca1cebc0c6,loki,updated,inventory threshold setting to 5,2025-05-18T15:13:26.712053
+83b71bb6-5dda-4d9d-aede-531766edf28b,loki,deleted,order 8ef13457-4d39-4ecc-9c6c-f0a7ae84cd31,2025-05-18T15:14:56.386219500
+ff918118-1e89-484a-97f1-155681768771,loki,deleted,order e931d77c-6b9a-4c4b-98d5-b008960bc963 ($499.98),2025-05-18T15:14:58.950599900
+2246f59c-7b12-498a-b3c2-8aed05a83584,loki,deleted,order 994ef100-3a7f-4e9b-b543-dfacf229fa46 ($999.99),2025-05-18T15:15:01.083304100
+0621fe8f-2ba4-411c-92d3-7616b77f5518,loki,created,customer RIdma Yasendra with ID 8f857422-5f7f-4564-819e-345ce9f30bc5,2025-05-18T15:15:37.102017700
+faae3e98-7576-4e0d-ab2b-cdd7ff326959,loki,created,order 2025001 ($450.00),2025-05-18T15:16:09.617481500
+6af9aee7-5945-4b97-bc75-310c68b16bec,loki,logged in,successfully,2025-05-18T15:23:06.870249600
+fe7eff94-7037-4544-9ed9-8f861acaedbd,loki,updated,item Chocolate (quantity: 0),2025-05-18T15:23:53.114547400
