@@ -1,134 +1,206 @@
-
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="com.ims185.model.User" %>
+<%@ page import="com.ims185.model.Customer" %>
+<%@ page import="java.util.List" %>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>IMS-185 Customer Management</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
-    <script src="${pageContext.request.contextPath}/animations.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Customers - IMS-185</title>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; background-color: #f0f0f0; color: #333; line-height: 1.6; }
+        .container { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background-color: #222; color: #fff; padding: 20px; }
+        .main-content { flex: 1; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; margin-bottom: 20px; }
+        .header-left { font-size: 1.5em; font-weight: bold; color: #e50914; }
+        .header-right { text-align: right; color: #333; }
+        .sidebar h1 { font-size: 1.5em; margin-bottom: 20px; color: #e50914; }
+        .sidebar ul { list-style: none; padding: 0; }
+        .sidebar li { margin-bottom: 10px; }
+        .sidebar a { color: #fff; text-decoration: none; display: block; padding: 10px; border-radius: 5px; transition: background-color 0.3s ease; }
+        .sidebar a:hover { background-color: #444; }
+        .sidebar a.active { background-color: #e50914; font-weight: bold; }
+        .section { background-color: #fff; padding: 20px; margin-bottom: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .section h2 { margin-bottom: 15px; color: #555; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .section h3 { margin: 15px 0 10px; color: #555; }
+        .section table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #e50914; color: #fff; }
+        .form-group { margin: 10px 0; }
+        label { display: inline-block; width: 100px; }
+        input, select, textarea { padding: 5px; width: 200px; }
+        textarea { height: 60px; vertical-align: top; }
+        button { padding: 5px 10px; background-color: #e50914; color: #fff; border: none; cursor: pointer; border-radius: 3px; }
+        button:hover { background-color: #c40812; }
+        .error { color: red; margin-bottom: 10px; }
+        @media (max-width: 768px) { .container { flex-direction: column; } .sidebar { width: 100%; } }
+    </style>
 </head>
-<body class="windows-11-theme">
-<div class="customer-management-container">
-    <aside class="sidebar blurred-panel">
-        <nav>
-            <a href="${pageContext.request.contextPath}/dashboard">Dashboard</a>
-            <a href="${pageContext.request.contextPath}/inventory">Inventory</a>
-            <a href="${pageContext.request.contextPath}/items">Items</a>
-            <a href="${pageContext.request.contextPath}/customer_management">Customer Management</a>
-            <c:if test="${user.isAdmin}">
-                <a href="${pageContext.request.contextPath}/user_management">User Management</a>
-            </c:if>
-        </nav>
-        <div class="theme-toggle">
-            <button onclick="toggleTheme()">Toggle Theme</button>
+<body>
+<%
+    User user = (User) session.getAttribute("loggedInUser");
+    if (user == null) {
+        response.sendRedirect(request.getContextPath() + "/login");
+        return;
+    }
+%>
+<div class="container">
+    <div class="sidebar">
+        <h1>Navigation</h1>
+        <ul>
+            <li><a href="<%= request.getContextPath() %>/dashboard" <%= request.getRequestURI().contains("dashboard") ? "class=\"active\"" : "" %>>Dashboard</a></li>
+            <% if (user.getRole().equals("admin")) { %>
+            <li><a href="<%= request.getContextPath() %>/user_management" <%= request.getRequestURI().contains("user_management") ? "class=\"active\"" : "" %>>Manage Users</a></li>
+            <% } %>
+            <li><a href="<%= request.getContextPath() %>/inventory" <%= request.getRequestURI().contains("inventory") ? "class=\"active\"" : "" %>>Manage Inventory</a></li>
+            <li><a href="<%= request.getContextPath() %>/customer_management" <%= request.getRequestURI().contains("customer_management") ? "class=\"active\"" : "" %>>Manage Customers</a></li>
+            <li><a href="<%= request.getContextPath() %>/update_profile" <%= request.getRequestURI().contains("update_profile") ? "class=\"active\"" : "" %>>Update Profile</a></li>
+            <li><a href="<%= request.getContextPath() %>/items" <%= request.getRequestURI().contains("items") ? "class=\"active\"" : "" %>>View Items</a></li>
+            <li><a href="<%= request.getContextPath() %>/reports" <%= request.getRequestURI().contains("reports") ? "class=\"active\"" : "" %>>Reports Dashboard</a></li>
+            <li><a href="<%= request.getContextPath() %>/analytics" <%= request.getRequestURI().contains("analytics") ? "class=\"active\"" : "" %>>Analytics Overview</a></li>
+            <li><a href="<%= request.getContextPath() %>/suppliers" <%= request.getRequestURI().contains("suppliers") ? "class=\"active\"" : "" %>>Supplier Management</a></li>
+            <li><a href="<%= request.getContextPath() %>/orders" <%= request.getRequestURI().contains("orders") ? "class=\"active\"" : "" %>>Order Processing</a></li>
+            <li><a href="<%= request.getContextPath() %>/returns" <%= request.getRequestURI().contains("returns") ? "class=\"active\"" : "" %>>Returns Management</a></li>
+            <li><a href="<%= request.getContextPath() %>/stockalerts" <%= request.getRequestURI().contains("stockalerts") ? "class=\"active\"" : "" %>>Stock Alerts</a></li>
+            <li><a href="<%= request.getContextPath() %>/activitylog" <%= request.getRequestURI().contains("activitylog") ? "class=\"active\"" : "" %>>User Activity Log</a></li>
+            <li><a href="<%= request.getContextPath() %>/settings" <%= request.getRequestURI().contains("settings") ? "class=\"active\"" : "" %>>Settings Configuration</a></li>
+            <li><a href="<%= request.getContextPath() %>/audittrail" <%= request.getRequestURI().contains("audittrail") ? "class=\"active\"" : "" %>>Audit Trail</a></li>
+            <li><a href="<%= request.getContextPath() %>/notice_board" <%= request.getRequestURI().contains("notice_board") ? "class=\"active\"" : "" %>>Notice Board</a></li>
+            <li><a href="<%= request.getContextPath() %>/logout">Logout</a></li>
+        </ul>
+    </div>
+    <div class="main-content">
+        <div class="header">
+            <div class="header-left">IMS-185</div>
+            <div class="header-right">User: <%= user.getUsername() %> (Role: <%= user.getRole() %>)</div>
         </div>
-    </aside>
-    <main>
-        <h1>Customer Management</h1>
-        <div class="search-box blurred-panel">
-            <form action="${pageContext.request.contextPath}/customer_management" method="get">
-                <input type="hidden" name="action" value="search">
-                <input type="text" name="searchQuery" placeholder="Search by Name or ID">
-                <button type="submit" class="btn">Search</button>
+        <div class="section">
+            <h2>Manage Customers</h2>
+            <% String error = request.getParameter("error");
+                if (error != null) { %>
+            <div class="error"><%= error %></div>
+            <% } %>
+            <h3>Add Customer</h3>
+            <form action="<%= request.getContextPath() %>/customer_management" method="post">
+                <input type="hidden" name="action" value="add">
+                <div class="form-group">
+                    <label for="addName">Name:</label>
+                    <input type="text" id="addName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="addEmail">Email:</label>
+                    <input type="email" id="addEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="addPhone">Phone:</label>
+                    <input type="text" id="addPhone" name="phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="addBalance">Balance:</label>
+                    <input type="number" step="0.01" id="addBalance" name="balance" value="0.0">
+                </div>
+                <div class="form-group">
+                    <label for="addorderCount">Order Count:</label>
+                    <input type="number" id="addorderCount" name="orderCount" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="addaddress">Address:</label>
+                    <textarea id="addaddress" name="address"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="addnotes">Notes:</label>
+                    <textarea id="addnotes" name="notes"></textarea>
+                </div>
+                <button type="submit">Add Customer</button>
             </form>
-        </div>
-        <h2>Add Customer</h2>
-        <form action="${pageContext.request.contextPath}/customer_management" method="post" class="blurred-panel">
-            <input type="hidden" name="action" value="add">
-            <label for="name">Name:</label>
-            <input type="text" id="name" name="name" required><br>
-            <label for="itemId">Item:</label>
-            <select id="itemId" name="itemId" required>
-                <c:forEach var="item" items="${items}">
-                    <option value="${item.id}"><c:out value="${item.name}"/> (${item.id})</option>
-                </c:forEach>
-            </select><br>
-            <label for="quantity">Quantity:</label>
-            <input type="number" id="quantity" name="quantity" min="1" required><br>
-            <label for="contactNo">Contact No:</label>
-            <input type="text" id="contactNo" name="contactNo" required><br>
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required><br>
-            <button type="submit" class="btn">Add Customer</button>
-        </form>
-        <h2>Customers</h2>
-        <table class="blurred-panel">
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Item ID</th>
-                <th>Item Name</th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Bought DateTime</th>
-                <th>Contact No</th>
-                <th>Email</th>
-                <th>Actions</th>
-            </tr>
-            <c:forEach var="customer" items="${customers}">
+
+            <h3>Update Customer</h3>
+            <form action="<%= request.getContextPath() %>/customer_management" method="post">
+                <input type="hidden" name="action" value="update">
+                <div class="form-group">
+                    <label for="id">Customer:</label>
+                    <select id="id" name="id" required>
+                        <% List<Customer> customers = (List<Customer>) request.getAttribute("customers");
+                            if (customers != null) {
+                                for (Customer customer : customers) { %>
+                        <option value="<%= customer.getId() %>"><%= customer.getName() %> (ID: <%= customer.getId() %>)</option>
+                        <% }
+                        } %>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="updateName">Name:</label>
+                    <input type="text" id="updateName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="updateEmail">Email:</label>
+                    <input type="email" id="updateEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone:</label>
+                    <input type="text" id="phone" name="phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="balance">Balance:</label>
+                    <input type="number" step="0.01" id="balance" name="balance" value="0.0">
+                </div>
+                <div class="form-group">
+                    <label for="orderCount">Order Count:</label>
+                    <input type="number" id="orderCount" name="orderCount" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="address">Address:</label>
+                    <textarea id="address" name="address"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="notes">Notes:</label>
+                    <textarea id="notes" name="notes"></textarea>
+                </div>
+                <button type="submit">Update Customer</button>
+            </form>
+
+            <h3>Customer List</h3>
+            <table>
                 <tr>
-                    <td><c:out value="${customer.id}"/></td>
-                    <td><c:out value="${customer.name}"/></td>
-                    <td><c:out value="${customer.itemId}"/></td>
-                    <td><c:out value="${customer.itemName}"/></td>
-                    <td><c:out value="${customer.price}"/></td>
-                    <td><c:out value="${customer.quantity}"/></td>
-                    <td><c:out value="${customer.boughtDateTime}"/></td>
-                    <td><c:out value="${customer.contactNo}"/></td>
-                    <td><c:out value="${customer.email}"/></td>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Balance</th>
+                    <th>Order Count</th>
+                    <th>Address</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                </tr>
+                <% if (customers != null && !customers.isEmpty()) {
+                    for (Customer customer : customers) { %>
+                <tr>
+                    <td><%= customer.getId() %></td>
+                    <td><%= customer.getName() %></td>
+                    <td><%= customer.getEmail() %></td>
+                    <td><%= customer.getPhone() %></td>
+                    <td><%= customer.getBalance() %></td>
+                    <td><%= customer.getOrderCount() %></td>
+                    <td><%= customer.getAddress() != null ? customer.getAddress() : "" %></td>
+                    <td><%= customer.getNotes() != null ? customer.getNotes() : "" %></td>
                     <td>
-                        <button onclick="showUpdateForm('${customer.id}', '${customer.name}', '${customer.itemId}', ${customer.quantity}, '${customer.contactNo}', '${customer.email}')">Update</button>
-                        <form action="${pageContext.request.contextPath}/customer_management" method="post" style="display:inline;">
+                        <form action="<%= request.getContextPath() %>/customer_management" method="post" style="display:inline;">
                             <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="customerId" value="${customer.id}">
-                            <button type="submit" class="btn">Delete</button>
+                            <input type="hidden" name="itemId" value="<%= customer.getId() %>">
+                            <button type="submit">Delete</button>
                         </form>
                     </td>
                 </tr>
-            </c:forEach>
-        </table>
-        <div id="updateForm" class="modal blurred-panel">
-            <form action="${pageContext.request.contextPath}/customer_management" method="post">
-                <input type="hidden" name="action" value="update">
-                <input type="hidden" name="customerId" id="updateCustomerId">
-                <label for="updateName">Name:</label>
-                <input type="text" id="updateName" name="name" required><br>
-                <label for="updateItemId">Item:</label>
-                <select id="updateItemId" name="itemId" required>
-                    <c:forEach var="item" items="${items}">
-                        <option value="${item.id}"><c:out value="${item.name}"/> (${item.id})</option>
-                    </c:forEach>
-                </select><br>
-                <label for="updateQuantity">Quantity:</label>
-                <input type="number" id="updateQuantity" name="quantity" min="1" required><br>
-                <label for="updateContactNo">Contact No:</label>
-                <input type="text" id="updateContactNo" name="contactNo" required><br>
-                <label for="updateEmail">Email:</label>
-                <input type="email" id="updateEmail" name="email" required><br>
-                <button type="submit" class="btn">Update Customer</button>
-                <button type="button" onclick="closeUpdateForm()">Cancel</button>
-            </form>
+                <% }
+                } else { %>
+                <tr><td colspan="9">No customers found.</td></tr>
+                <% } %>
+            </table>
         </div>
-        <c:if test="${not empty param.error}">
-            <p class="error"><c:out value="${param.error}"/></p>
-        </c:if>
-    </main>
+    </div>
 </div>
-<script>
-    function showUpdateForm(id, name, itemId, quantity, contactNo, email) {
-        document.getElementById('updateCustomerId').value = id;
-        document.getElementById('updateName').value = name;
-        document.getElementById('updateItemId').value = itemId;
-        document.getElementById('updateQuantity').value = quantity;
-        document.getElementById('updateContactNo').value = contactNo;
-        document.getElementById('updateEmail').value = email;
-        document.getElementById('updateForm').style.display = 'block';
-    }
-    function closeUpdateForm() {
-        document.getElementById('updateForm').style.display = 'none';
-    }
-</script>
 </body>
 </html>

@@ -1,6 +1,7 @@
 package com.ims185.servlet;
 
 import com.ims185.model.User;
+import com.ims185.util.ActivityLogger;
 import com.ims185.util.FileStorage;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -37,18 +38,24 @@ public class LoginServlet extends HttpServlet {
         User loggedInUser = users.stream()
                 .filter(user -> user.getUsername().equals(username) && user.getPassword().equals(password))
                 .findFirst()
-                .orElse(null);
-
-        if (loggedInUser != null) {
+                .orElse(null);        if (loggedInUser != null) {
             System.out.println("LoginServlet: Authentication successful for user: " + loggedInUser.getUsername());
             HttpSession session = request.getSession(true); // Ensure a new session is created if none exists
             session.setAttribute("loggedInUser", loggedInUser);
             session.setMaxInactiveInterval(30 * 60); // Set session timeout to 30 minutes
             System.out.println("LoginServlet: Session ID=" + session.getId() + ", loggedInUser set");
+            
+            // Log successful login
+            ActivityLogger.logLogin(request, true, username);
+            
             response.sendRedirect(request.getContextPath() + "/dashboard");
             System.out.println("LoginServlet: Redirecting to dashboard");
         } else {
             System.out.println("LoginServlet: Authentication failed - Invalid credentials");
+            
+            // Log failed login attempt
+            ActivityLogger.logLogin(request, false, username);
+            
             request.setAttribute("error", "Invalid username or password");
             request.getRequestDispatcher("login.jsp").forward(request, response);
         }

@@ -13,9 +13,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 @WebServlet("/analytics")
 public class AnalyticsServlet extends HttpServlet {
+    private static final Logger LOGGER = Logger.getLogger(AnalyticsServlet.class.getName());
     private List<Item> loadItemsFromFile() {
         List<Item> items = new ArrayList<>();
         String filePath = getServletContext().getRealPath("/") + "inventory.txt";
@@ -39,21 +41,23 @@ public class AnalyticsServlet extends HttpServlet {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.severe("Failed to load inventory.txt: " + e.getMessage());
         }
         return items;
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        HttpSession session = request.getSession();
-        if (session.getAttribute("loggedInUser") == null) {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("loggedInUser") == null) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
         List<Item> items = loadItemsFromFile();
         int totalStock = items.stream().mapToInt(Item::getStock).sum();
+        double totalValue = items.stream().mapToDouble(item -> item.getPrice() * item.getStock()).sum();
         request.setAttribute("totalStock", totalStock);
+        request.setAttribute("totalValue", totalValue);
         request.getRequestDispatcher("/analytics.jsp").forward(request, response);
     }
 }

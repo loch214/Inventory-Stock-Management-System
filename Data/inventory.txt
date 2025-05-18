@@ -1,1 +1,0 @@
-1,TestItem,Electronics,10,100.00,ITEM001,images/ITEM001.jpg,2025-12-31,2025-05-14,2025-05-14

@@ -1,5 +1,6 @@
 package com.ims185.servlet;
 
+import com.ims185.model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;

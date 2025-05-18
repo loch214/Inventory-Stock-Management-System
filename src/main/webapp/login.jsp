@@ -54,7 +54,7 @@
             margin-top: 20px;
         }
 
-        Stock Chart Animation */
+        /*Stock Chart Animation */
         .stock-line {
             position: absolute;
             width: 100%;
