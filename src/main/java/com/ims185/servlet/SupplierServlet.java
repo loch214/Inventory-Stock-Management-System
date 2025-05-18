@@ -12,7 +12,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-
+//Created the SupplierServlet.java
 @WebServlet("/suppliers")
 public class SupplierServlet extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(SupplierServlet.class.getName());
