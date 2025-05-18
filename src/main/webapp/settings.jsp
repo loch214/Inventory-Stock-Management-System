@@ -12,7 +12,7 @@
     body { font-family: 'Roboto', sans-serif; background-color: #f0f0f0; color: #333; line-height: 1.6; }
     .container { display: flex; min-height: 100vh; }
     .sidebar { width: 250px; background-color: #222; color: #fff; padding: 20px; }
-    .main-content { flex: 1; padding: 20px; }
+    .main-content { flex: 1; padding: 20px; }}
     .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; margin-bottom: 20px; }
     .header-left { font-size: 1.5em; font-weight: bold; color: #e50914; }
     .header-right { text-align: right; color: #000000; }

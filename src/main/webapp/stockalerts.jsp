@@ -18,7 +18,7 @@
         .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; margin-bottom: 20px; }
         .header-left { font-size: 1.5em; font-weight: bold; color: #e50914; }
         .header-right { text-align: right; color: #333; }
-        .sidebar h1 { font-size: 1.5em; margin-bottom: 20px; color: #e50914; }
+        .sidebar h1 { font-size: 1.5em; margin-bottom: 20px; color: #e50914; }}
         .sidebar ul { list-style: none; padding: 0; }
         .sidebar li { margin-bottom: 10px; }
         .sidebar a { color: #fff; text-decoration: none; display: block; padding: 10px; border-radius: 5px; transition: background-color 0.3s ease; }
