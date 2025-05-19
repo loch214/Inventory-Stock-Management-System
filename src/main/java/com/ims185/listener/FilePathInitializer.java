@@ -10,13 +10,11 @@ public class FilePathInitializer implements ServletContextListener {
     
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-        // Initialize file paths when the application starts
         FilePaths.initialize(sce.getServletContext());
     }
     
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        // Cleanup if needed
     }
 
 }
