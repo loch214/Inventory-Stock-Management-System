@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-// Using a different URL pattern to resolve conflict with OrdersServlet
 @WebServlet("/order") 
 public class OrderServlet extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(OrderServlet.class.getName());
@@ -98,7 +97,6 @@ public class OrderServlet extends HttpServlet {
         List<Item> items = new ArrayList<>();
         boolean stockUpdated = false;
 
-        // First pass: verify stock availability
         try (BufferedReader reader = new BufferedReader(new FileReader(inventoryFile.toFile()))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -116,7 +114,6 @@ public class OrderServlet extends HttpServlet {
             }
         }
 
-        // Second pass: update stock if available
         try (BufferedReader reader = new BufferedReader(new FileReader(inventoryFile.toFile()))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -149,7 +146,6 @@ public class OrderServlet extends HttpServlet {
             throw new IOException("Item not found in inventory: " + itemName);
         }
 
-        // Save updated inventory
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(inventoryFile.toFile()))) {
             for (Item item : items) {
                 writer.write(String.format("%d,%s,%s,%d,%.2f,%s,%s,%s,%s,%s%n",
@@ -186,8 +182,7 @@ public class OrderServlet extends HttpServlet {
                 String itemName = request.getParameter("itemName");
                 int quantity = Integer.parseInt(request.getParameter("quantity"));
                 double totalPrice = Double.parseDouble(request.getParameter("totalPrice"));
-
-                // First, try to update inventory stock
+                
                 boolean stockUpdated = updateInventoryStock(itemName, quantity);
                 
                 if (!stockUpdated) {
@@ -197,7 +192,6 @@ public class OrderServlet extends HttpServlet {
                     return;
                 }
 
-                // If stock update succeeds, create the order
                 Order order = new Order(customerName, itemName, quantity, totalPrice);
                 orders.add(order);
                 LOGGER.info("Created new order for customer: " + customerName);
