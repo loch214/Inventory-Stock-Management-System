@@ -36,11 +36,9 @@ public class OrdersServlet extends HttpServlet {
             return;
         }
 
-        // Load existing orders
         List<Order> orders = loadOrders();
         request.setAttribute("orders", orders);
         
-        // Load customers and items for dropdowns
         request.setAttribute("customers", loadCustomers());
         request.setAttribute("items", loadItems());
         
@@ -61,14 +59,11 @@ public class OrdersServlet extends HttpServlet {
         String itemName = request.getParameter("itemName");
         
         try {            if ("create".equals(action)) {
-                // Create a new order
                 int quantity = Integer.parseInt(request.getParameter("quantity"));
                 double totalPrice = Double.parseDouble(request.getParameter("totalPrice"));
                 
-                // Check if there's enough stock available
                 int availableStock = getAvailableStock(itemName);
                 if (quantity > availableStock) {
-                    // Not enough stock available
                     request.setAttribute("error", "Cannot create order: Requested quantity (" + quantity + 
                         ") exceeds available stock (" + availableStock + ") for item " + itemName);
                     LOGGER.warning("Order creation failed: Insufficient stock for " + itemName + 
@@ -76,35 +71,26 @@ public class OrdersServlet extends HttpServlet {
                 } else {
                     Order order = new Order(customerName, itemName, quantity, totalPrice);
                     
-                    // Generate formatted order ID (e.g., 2025001)
                     int numericId = generateId();
-                    // Format: YYYY + 3-digit sequence
                     String formattedId = String.format("%d%03d", LocalDateTime.now().getYear(), numericId);
                     order.setId(formattedId);
                     
-                    // Update inventory stock
                     updateInventoryStock(itemName, quantity);
-                    // Save the order
                     saveOrder(order);
                     
-                    // Log the order creation
                     ActivityLogger.logOrderAction(request, "created", order.getId(), Double.valueOf(totalPrice));
                     
                     request.setAttribute("success", "Order created successfully.");
                 }} else if ("update".equals(action)) {
-                // Update an existing order
                 int quantity = Integer.parseInt(request.getParameter("quantity"));
                 double totalPrice = Double.parseDouble(request.getParameter("totalPrice"));
                 String id = request.getParameter("id");
                 
-                // Get the old order details to adjust inventory correctly
                 Order oldOrder = findOrderById(id);
                 if (oldOrder != null) {
                     boolean hasEnoughStock = true;
                     
-                    // If quantity or item changed, check inventory stock
                     if (!oldOrder.getItemName().equals(itemName) || oldOrder.getQuantity() != quantity) {
-                        // For a different item, check the new item's stock
                         if (!oldOrder.getItemName().equals(itemName)) {
                             int availableStock = getAvailableStock(itemName);
                             if (quantity > availableStock) {
@@ -115,10 +101,8 @@ public class OrdersServlet extends HttpServlet {
                                     ". Requested: " + quantity + ", Available: " + availableStock);
                             }
                         } 
-                        // For the same item but increased quantity
                         else if (quantity > oldOrder.getQuantity()) {
                             int availableStock = getAvailableStock(itemName);
-                            // We need to check if the additional quantity is available
                             int additionalQuantity = quantity - oldOrder.getQuantity();
                             if (additionalQuantity > availableStock) {
                                 hasEnoughStock = false;
@@ -131,18 +115,14 @@ public class OrdersServlet extends HttpServlet {
                     }
                     
                     if (hasEnoughStock) {
-                        // If quantity or item changed, update inventory
                         if (!oldOrder.getItemName().equals(itemName) || oldOrder.getQuantity() != quantity) {
-                            // Restore stock for the old item/quantity
                             restoreInventoryStock(oldOrder.getItemName(), oldOrder.getQuantity());
                             
-                            // Update stock for the new item/quantity
                             updateInventoryStock(itemName, quantity);
                         }
                         
                         updateOrder(id, customerName, itemName, quantity, totalPrice);
                         
-                        // Log the order update
                         ActivityLogger.logOrderAction(request, "updated", id, Double.valueOf(totalPrice));
                         
                         request.setAttribute("success", "Order updated successfully.");
@@ -151,18 +131,14 @@ public class OrdersServlet extends HttpServlet {
                     request.setAttribute("error", "Cannot update order: Order not found with ID " + id);
                 }
                   } else if ("delete".equals(action)) {
-                // Delete an order
                 String id = request.getParameter("id");
                 
-                // Get the order details to restore inventory
                 Order orderToDelete = findOrderById(id);
                 if (orderToDelete != null) {
-                    // Restore stock when deleting an order
                     restoreInventoryStock(orderToDelete.getItemName(), orderToDelete.getQuantity());
                 }
                   deleteOrder(id);
                 
-                // Log the order deletion
                 if (orderToDelete != null) {
                     ActivityLogger.logOrderAction(request, "deleted", id, orderToDelete.getTotalPrice());
                 } else {
@@ -176,11 +152,9 @@ public class OrdersServlet extends HttpServlet {
             request.setAttribute("error", "Error processing order: " + e.getMessage());
         }
         
-        // Reload orders
         List<Order> orders = loadOrders();
         request.setAttribute("orders", orders);
         
-        // Load customers and items for dropdowns
         request.setAttribute("customers", loadCustomers());
         request.setAttribute("items", loadItems());
         
@@ -192,7 +166,7 @@ public class OrdersServlet extends HttpServlet {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.startsWith("//") || line.trim().isEmpty()) continue; // Skip comments and empty lines
+                if (line.startsWith("//") || line.trim().isEmpty()) continue; 
                 
                 String[] parts = line.split(",");
                 if (parts.length >= 5) {
@@ -212,7 +186,6 @@ public class OrdersServlet extends HttpServlet {
             }
         } catch (IOException e) {
             LOGGER.warning("Error reading orders file: " + e.getMessage());
-            // Use sample data if file not found or error reading
             orders.add(new Order("John Doe", "Laptop", 1, 999.99));
             orders.add(new Order("Jane Smith", "Monitor", 2, 499.98));
         }
@@ -227,11 +200,11 @@ public class OrdersServlet extends HttpServlet {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.startsWith("//") || line.trim().isEmpty()) continue; // Skip comments and empty lines
+                if (line.startsWith("//") || line.trim().isEmpty()) continue; 
                 
                 String[] parts = line.split(",");
                 if (parts.length >= 2) {
-                    customers.add(parts[1]); // Name is at index 1
+                    customers.add(parts[1]); 
                 }
             }
         } catch (IOException e) {
@@ -248,7 +221,7 @@ public class OrdersServlet extends HttpServlet {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.startsWith("//") || line.trim().isEmpty()) continue; // Skip comments and empty lines
+                if (line.startsWith("//") || line.trim().isEmpty()) continue;
                 
                 String[] parts = line.split(",");
                 if (parts.length >= 5) {
@@ -290,10 +263,8 @@ public class OrdersServlet extends HttpServlet {
         String filePath = getServletContext().getRealPath("/") + ORDERS_FILE_PATH;
         
         try (FileWriter writer = new FileWriter(filePath)) {
-            // Write header
             writer.write("// Orders data file\n");
             
-            // Update the matching order and write all back
             for (Order order : orders) {
                 if (order.getId().equals(id)) {
                     order.setCustomerName(customerName);
@@ -318,10 +289,8 @@ public class OrdersServlet extends HttpServlet {
         String filePath = getServletContext().getRealPath("/") + ORDERS_FILE_PATH;
         
         try (FileWriter writer = new FileWriter(filePath)) {
-            // Write header
             writer.write("// Orders data file\n");
             
-            // Write all orders except the one to be deleted
             for (Order order : orders) {
                 if (!order.getId().equals(id)) {
                     writer.write(order.getId() + "," + 
@@ -346,13 +315,11 @@ public class OrdersServlet extends HttpServlet {
                     maxId = orderId;
                 }
             } catch (NumberFormatException e) {
-                // Skip non-numeric IDs
             }
         }
         return maxId + 1;
     }
     
-    // Method to update inventory stock when an order is placed
     private void updateInventoryStock(String itemName, int quantity) {
         String filePath = getServletContext().getRealPath("/") + INVENTORY_FILE_PATH;
         List<Item> items = new ArrayList<>();
@@ -362,8 +329,7 @@ public class OrdersServlet extends HttpServlet {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("//") || line.trim().isEmpty()) {
-                    // Keep comments and empty lines
-                    items.add(null); // Use null as a marker for non-item lines
+                    items.add(null); 
                     continue;
                 }
                 
@@ -383,12 +349,11 @@ public class OrdersServlet extends HttpServlet {
                         if (parts.length > 8) item.setAddedDate(parts[8]);
                         if (parts.length > 9) item.setLastUpdatedDate(parts[9]);
                         
-                        // If this is the item being ordered, reduce stock
                         if (item.getName().equals(itemName)) {
                             int newStock = item.getStock() - quantity;
                             if (newStock < 0) {
                                 LOGGER.warning("Insufficient stock for " + itemName + ". Available: " + item.getStock() + ", Requested: " + quantity);
-                                newStock = 0; // Prevent negative stock
+                                newStock = 0; 
                             }
                             item.setStock(newStock);
                             itemFound = true;
@@ -396,14 +361,13 @@ public class OrdersServlet extends HttpServlet {
                         items.add(item);
                     } catch (Exception e) {
                         LOGGER.warning("Invalid item data: " + line);
-                        items.add(null); // Mark invalid lines
+                        items.add(null); 
                     }
                 } else {
-                    items.add(null); // Mark invalid lines
+                    items.add(null); 
                 }
             }
             
-            // If the item wasn't found, log a warning
             if (!itemFound) {
                 LOGGER.warning("Item not found in inventory: " + itemName);
                 return;
