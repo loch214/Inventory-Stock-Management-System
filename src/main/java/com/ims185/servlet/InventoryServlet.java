@@ -21,10 +21,10 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @MultipartConfig(
-    fileSizeThreshold = 1024 * 1024,  // 1 MB
-    maxFileSize = 1024 * 1024 * 10,   // 10 MB
-    maxRequestSize = 1024 * 1024 * 50, // 50 MB
-    location = "C:/IMS-185-Data/Uploads"
+        fileSizeThreshold = 1024 * 1024,  // 1 MB
+        maxFileSize = 1024 * 1024 * 10,   // 10 MB
+        maxRequestSize = 1024 * 1024 * 50, // 50 MB
+        location = "C:/IMS-185-Data/Uploads"
 )
 public class InventoryServlet extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(InventoryServlet.class.getName());
@@ -87,12 +87,12 @@ public class InventoryServlet extends HttpServlet {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(inventoryFile.toFile()))) {
             for (Item item : items) {
                 writer.write(String.format("%d,%s,%s,%d,%.2f,%s,%s,%s,%s,%s%n",
-                        item.getId(), 
-                        item.getName(), 
+                        item.getId(),
+                        item.getName(),
                         item.getCategory() != null ? item.getCategory() : "",
-                        item.getStock(), 
+                        item.getStock(),
                         item.getPrice(),
-                        item.getItemId(), 
+                        item.getItemId(),
                         item.getImagePath() != null ? item.getImagePath() : "",
                         item.getExpiryDate() != null ? item.getExpiryDate() : "",
                         item.getAddedDate() != null ? item.getAddedDate() : "",
@@ -112,9 +112,9 @@ public class InventoryServlet extends HttpServlet {
                     imagesPath.toFile().mkdirs();
                 }
                 String contentType = filePart.getContentType();
-                String extension = contentType != null && contentType.contains("/") 
-                    ? contentType.split("/")[1] 
-                    : "jpg";
+                String extension = contentType != null && contentType.contains("/")
+                        ? contentType.split("/")[1]
+                        : "jpg";
                 fileName = fileName.replace(".jpg", "." + extension);
                 Path filePath = imagesPath.resolve(fileName);
                 filePart.write(filePath.toString());
@@ -136,7 +136,7 @@ public class InventoryServlet extends HttpServlet {
         }
 
         List<Item> items = loadItemsFromFile();
-        
+
         // Sort items if requested
         String sortBy = request.getParameter("sort");
         if ("expiry".equals(sortBy)) {
@@ -148,9 +148,9 @@ public class InventoryServlet extends HttpServlet {
         if (searchQuery != null && !searchQuery.trim().isEmpty()) {
             final String query = searchQuery.toLowerCase();
             items = items.stream()
-                    .filter(item -> 
-                        (item.getName() != null && item.getName().toLowerCase().contains(query)) ||
-                        (item.getItemId() != null && item.getItemId().toLowerCase().contains(query)))
+                    .filter(item ->
+                            (item.getName() != null && item.getName().toLowerCase().contains(query)) ||
+                                    (item.getItemId() != null && item.getItemId().toLowerCase().contains(query)))
                     .collect(Collectors.toList());
         }
 
@@ -189,7 +189,7 @@ public class InventoryServlet extends HttpServlet {
                 String imagePath = saveImage(filePart, item.getItemId());
                 item.setImagePath(imagePath);                items.add(item);
                 LOGGER.info("Added new item: " + item.getName());
-                
+
                 // Log the inventory addition activity
                 ActivityLogger.logInventoryAction(request, "added", item.getName(), item.getStock());} else if ("Update".equals(action)) {
                 int id = Integer.parseInt(request.getParameter("id"));
@@ -212,22 +212,22 @@ public class InventoryServlet extends HttpServlet {
                         String imagePath = saveImage(filePart, item.getItemId());
                         item.setImagePath(imagePath);
                     }                    LOGGER.info("Updated item: " + item.getName());
-                    
+
                     // Log the inventory update activity
                     ActivityLogger.logInventoryAction(request, "updated", item.getName(), item.getStock());
                 }} else if ("Delete".equals(action)) {                int id = Integer.parseInt(request.getParameter("id"));
-                
+
                 // Get item name before deletion for logging
                 Item itemToDelete = items.stream()
                         .filter(i -> i.getId() == id)
                         .findFirst()
                         .orElse(null);
-                
+
                 if (itemToDelete != null) {
                     String itemName = itemToDelete.getName();
                     items.removeIf(item -> item.getId() == id);
                     LOGGER.info("Deleted item with ID: " + id);
-                    
+
                     // Log the inventory deletion activity
                     ActivityLogger.logInventoryAction(request, "deleted", itemName, null);
                 } else {
@@ -265,3 +265,5 @@ public class InventoryServlet extends HttpServlet {
                 .collect(Collectors.toList());
     }
 }
+
+
