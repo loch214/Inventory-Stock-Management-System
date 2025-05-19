@@ -21,17 +21,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/* @WebServlet annotation removed - using web.xml configuration instead */
+
 public class ItemsServlet extends HttpServlet {    
-    // Method to load threshold value from settings file
+    
     private int loadThresholdFromSettings() {
         int defaultThreshold = 10;
         Path[] possiblePaths = new Path[] {
-            // Primary path from FilePaths config
             Paths.get(FilePaths.getDataDirectory(), "settings.txt"),
-            // Alt path - WEB-INF/data
             Paths.get(getServletContext().getRealPath("/WEB-INF/data"), "settings.txt"),
-            // Target directory path
             Paths.get(getServletContext().getRealPath("/"), "WEB-INF", "data", "settings.txt")
         };
         
@@ -106,8 +103,7 @@ public class ItemsServlet extends HttpServlet {
             return;
         }
         List<Item> items = loadItemsFromFile();
-        
-        // Handle search functionality
+
         String searchQuery = request.getParameter("search");
         if (searchQuery != null && !searchQuery.trim().isEmpty()) {
             String query = searchQuery.toLowerCase();
@@ -119,7 +115,6 @@ public class ItemsServlet extends HttpServlet {
                 .collect(Collectors.toList());
         }
 
-        // Load the threshold value from settings
         int threshold = loadThresholdFromSettings();
         
         request.setAttribute("items", items);
