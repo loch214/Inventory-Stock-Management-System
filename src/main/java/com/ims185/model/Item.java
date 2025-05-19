@@ -8,15 +8,12 @@ public class Item {
     private double price;
     private String itemId;
     private String imagePath;
-    private String expiryDate;    // New field for expiry date
-    private String addedDate;     // New field for added date
-    private String lastUpdatedDate; // New field for last updated date
+    private String expiryDate;    
+    private String addedDate;    
+    private String lastUpdatedDate; 
 
-    // Constructor (default)
     public Item() {
     }
-
-    // Constructor with all fields
     public Item(int id, String name, String category, int stock, double price, String itemId, String imagePath, String expiryDate, String addedDate, String lastUpdatedDate) {
         this.id = id;
         this.name = name;
@@ -30,7 +27,7 @@ public class Item {
         this.lastUpdatedDate = lastUpdatedDate;
     }
 
-    // Getters and Setters
+    
     public int getId() {
         return id;
     }
@@ -111,7 +108,7 @@ public class Item {
         this.lastUpdatedDate = lastUpdatedDate;
     }
 
-    // Optional: Override toString for debugging
+    
     @Override
     public String toString() {
         return "Item{" +
