@@ -16,6 +16,7 @@ public class Stack<T> {
         return item;
     }
 
+
     public T pop() {
         if (isEmpty()) {
             throw new EmptyStackException();
