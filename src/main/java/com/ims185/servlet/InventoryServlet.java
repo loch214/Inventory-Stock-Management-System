@@ -34,13 +34,13 @@ public class InventoryServlet extends HttpServlet {
         Path inventoryFile = Paths.get(FilePaths.getDataDirectory(), "inventory.txt");
         File file = inventoryFile.toFile();
 
-        
+        // Ensure directory exists
         if (!file.getParentFile().exists()) {
             boolean created = file.getParentFile().mkdirs();
             LOGGER.info("Created directory " + file.getParentFile().getPath() + ": " + created);
         }
 
-        
+        // Create file if it doesn't exist
         if (!file.exists()) {
             try {
                 if (file.createNewFile()) {
@@ -106,6 +106,7 @@ public class InventoryServlet extends HttpServlet {
         if (filePart != null && filePart.getSize() > 0) {
             try {
                 String fileName = itemId + "_" + UUID.randomUUID().toString() + ".jpg";
+                // Create images directory within upload directory
                 Path imagesPath = Paths.get(FilePaths.getUploadDirectory(), "images");
                 if (!imagesPath.toFile().exists()) {
                     imagesPath.toFile().mkdirs();
@@ -117,6 +118,7 @@ public class InventoryServlet extends HttpServlet {
                 fileName = fileName.replace(".jpg", "." + extension);
                 Path filePath = imagesPath.resolve(fileName);
                 filePart.write(filePath.toString());
+                // Return path relative to upload directory
                 return "images/" + fileName;
             } catch (IOException e) {
                 LOGGER.severe("Error saving image: " + e.getMessage());
@@ -135,11 +137,13 @@ public class InventoryServlet extends HttpServlet {
 
         List<Item> items = loadItemsFromFile();
 
+        // Sort items if requested
         String sortBy = request.getParameter("sort");
         if ("expiry".equals(sortBy)) {
             items = sortItemsByExpiryDate(items);
         }
 
+        // Filter items if search query exists
         final String searchQuery = request.getParameter("search");
         if (searchQuery != null && !searchQuery.trim().isEmpty()) {
             final String query = searchQuery.toLowerCase();
@@ -168,6 +172,7 @@ public class InventoryServlet extends HttpServlet {
 
         try {
             if ("Add".equals(action)) {
+                // Create new item
                 Item item = new Item();
                 item.setId(items.isEmpty() ? 1 : items.stream().mapToInt(Item::getId).max().getAsInt() + 1);
                 item.setName(request.getParameter("name"));
@@ -178,11 +183,14 @@ public class InventoryServlet extends HttpServlet {
                 item.setExpiryDate(request.getParameter("expiryDate"));
                 item.setAddedDate(dateFormat.format(new Date()));
                 item.setLastUpdatedDate(dateFormat.format(new Date()));
+
+                // Handle image upload
                 Part filePart = request.getPart("image");
                 String imagePath = saveImage(filePart, item.getItemId());
                 item.setImagePath(imagePath);                items.add(item);
                 LOGGER.info("Added new item: " + item.getName());
 
+                // Log the inventory addition activity
                 ActivityLogger.logInventoryAction(request, "added", item.getName(), item.getStock());} else if ("Update".equals(action)) {
                 int id = Integer.parseInt(request.getParameter("id"));
                 Item item = items.stream()
@@ -205,9 +213,11 @@ public class InventoryServlet extends HttpServlet {
                         item.setImagePath(imagePath);
                     }                    LOGGER.info("Updated item: " + item.getName());
 
+                    // Log the inventory update activity
                     ActivityLogger.logInventoryAction(request, "updated", item.getName(), item.getStock());
                 }} else if ("Delete".equals(action)) {                int id = Integer.parseInt(request.getParameter("id"));
 
+                // Get item name before deletion for logging
                 Item itemToDelete = items.stream()
                         .filter(i -> i.getId() == id)
                         .findFirst()
@@ -218,6 +228,7 @@ public class InventoryServlet extends HttpServlet {
                     items.removeIf(item -> item.getId() == id);
                     LOGGER.info("Deleted item with ID: " + id);
 
+                    // Log the inventory deletion activity
                     ActivityLogger.logInventoryAction(request, "deleted", itemName, null);
                 } else {
                     items.removeIf(item -> item.getId() == id);
