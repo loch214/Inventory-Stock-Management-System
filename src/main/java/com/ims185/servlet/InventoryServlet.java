@@ -3,8 +3,8 @@ package com.ims185.servlet;
 import com.ims185.model.Item;
 import com.ims185.config.FilePaths;
 import com.ims185.util.ActivityLogger;
+import com.ims185.util.Stack;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,8 +20,6 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-
-
 @MultipartConfig(
         fileSizeThreshold = 1024 * 1024,  // 1 MB
         maxFileSize = 1024 * 1024 * 10,   // 10 MB
@@ -31,18 +29,17 @@ import java.util.stream.Collectors;
 public class InventoryServlet extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(InventoryServlet.class.getName());
 
-    private List<Item> loadItemsFromFile() {
-        List<Item> items = new ArrayList<>();
+    // Load items into a Stack instead of List
+    private Stack<Item> loadItemsFromFile() {
+        Stack<Item> stack = new Stack<>();
         Path inventoryFile = Paths.get(FilePaths.getDataDirectory(), "inventory.txt");
         File file = inventoryFile.toFile();
 
-        // Ensure directory exists
         if (!file.getParentFile().exists()) {
             boolean created = file.getParentFile().mkdirs();
             LOGGER.info("Created directory " + file.getParentFile().getPath() + ": " + created);
         }
 
-        // Create file if it doesn't exist
         if (!file.exists()) {
             try {
                 if (file.createNewFile()) {
@@ -50,7 +47,7 @@ public class InventoryServlet extends HttpServlet {
                 }
             } catch (IOException e) {
                 LOGGER.severe("Failed to create inventory.txt: " + e.getMessage());
-                return items;
+                return stack;
             }
         }
 
@@ -72,7 +69,7 @@ public class InventoryServlet extends HttpServlet {
                         item.setExpiryDate(parts[7]);
                         item.setAddedDate(parts[8]);
                         item.setLastUpdatedDate(parts[9]);
-                        items.add(item);
+                        stack.push(item);
                     } catch (NumberFormatException e) {
                         LOGGER.warning("Skipping line due to parsing error: " + line);
                     }
@@ -81,13 +78,14 @@ public class InventoryServlet extends HttpServlet {
         } catch (IOException e) {
             LOGGER.severe("Error reading inventory.txt: " + e.getMessage());
         }
-        return items;
+        return stack;
     }
 
-    private void saveItemsToFile(List<Item> items) {
+    // Save from Stack to file (write in the order they are stacked)
+    private void saveItemsToFile(Stack<Item> stack) {
         Path inventoryFile = Paths.get(FilePaths.getDataDirectory(), "inventory.txt");
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(inventoryFile.toFile()))) {
-            for (Item item : items) {
+            for (Item item : stack.getAll()) {
                 writer.write(String.format("%d,%s,%s,%d,%.2f,%s,%s,%s,%s,%s%n",
                         item.getId(),
                         item.getName(),
@@ -100,15 +98,16 @@ public class InventoryServlet extends HttpServlet {
                         item.getAddedDate() != null ? item.getAddedDate() : "",
                         item.getLastUpdatedDate() != null ? item.getLastUpdatedDate() : ""));
             }
-            LOGGER.info("Saved " + items.size() + " items to inventory.");
+            LOGGER.info("Saved " + stack.size() + " items to inventory.");
         } catch (IOException e) {
             LOGGER.severe("Error saving inventory: " + e.getMessage());
         }
-    }    private String saveImage(Part filePart, String itemId) {
+    }
+
+    private String saveImage(Part filePart, String itemId) {
         if (filePart != null && filePart.getSize() > 0) {
             try {
                 String fileName = itemId + "_" + UUID.randomUUID().toString() + ".jpg";
-                // Create images directory within upload directory
                 Path imagesPath = Paths.get(FilePaths.getUploadDirectory(), "images");
                 if (!imagesPath.toFile().exists()) {
                     imagesPath.toFile().mkdirs();
@@ -120,7 +119,6 @@ public class InventoryServlet extends HttpServlet {
                 fileName = fileName.replace(".jpg", "." + extension);
                 Path filePath = imagesPath.resolve(fileName);
                 filePart.write(filePath.toString());
-                // Return path relative to upload directory
                 return "images/" + fileName;
             } catch (IOException e) {
                 LOGGER.severe("Error saving image: " + e.getMessage());
@@ -137,15 +135,16 @@ public class InventoryServlet extends HttpServlet {
             return;
         }
 
-        List<Item> items = loadItemsFromFile();
+        Stack<Item> stack = loadItemsFromFile();
+        List<Item> items = stack.getAll();
 
-        // Sort items if requested
+        // Sort if requested
         String sortBy = request.getParameter("sort");
         if ("expiry".equals(sortBy)) {
             items = sortItemsByExpiryDate(items);
         }
 
-        // Filter items if search query exists
+        // Filter by search query
         final String searchQuery = request.getParameter("search");
         if (searchQuery != null && !searchQuery.trim().isEmpty()) {
             final String query = searchQuery.toLowerCase();
@@ -169,12 +168,12 @@ public class InventoryServlet extends HttpServlet {
         }
 
         String action = request.getParameter("action");
-        List<Item> items = loadItemsFromFile();
+        Stack<Item> stack = loadItemsFromFile();
+        List<Item> items = stack.getAll();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
         try {
             if ("Add".equals(action)) {
-                // Create new item
                 Item item = new Item();
                 item.setId(items.isEmpty() ? 1 : items.stream().mapToInt(Item::getId).max().getAsInt() + 1);
                 item.setName(request.getParameter("name"));
@@ -186,70 +185,87 @@ public class InventoryServlet extends HttpServlet {
                 item.setAddedDate(dateFormat.format(new Date()));
                 item.setLastUpdatedDate(dateFormat.format(new Date()));
 
-                // Handle image upload
                 Part filePart = request.getPart("image");
                 String imagePath = saveImage(filePart, item.getItemId());
-                item.setImagePath(imagePath);                items.add(item);
+                item.setImagePath(imagePath);
+
+                stack.push(item);
                 LOGGER.info("Added new item: " + item.getName());
 
-                // Log the inventory addition activity
-                ActivityLogger.logInventoryAction(request, "added", item.getName(), item.getStock());} else if ("Update".equals(action)) {
+                ActivityLogger.logInventoryAction(request, "added", item.getName(), item.getStock());
+            } else if ("Update".equals(action)) {
                 int id = Integer.parseInt(request.getParameter("id"));
-                Item item = items.stream()
-                        .filter(i -> i.getId() == id)
-                        .findFirst()
-                        .orElse(null);
+                Item existingItem = null;
 
-                if (item != null) {
-                    item.setName(request.getParameter("name"));
-                    item.setCategory(request.getParameter("category"));
-                    item.setStock(Integer.parseInt(request.getParameter("stock")));
-                    item.setPrice(Double.parseDouble(request.getParameter("price")));
-                    item.setItemId(request.getParameter("itemId"));
-                    item.setExpiryDate(request.getParameter("expiryDate"));
-                    item.setLastUpdatedDate(dateFormat.format(new Date()));
+                // Find existing item
+                for (Item i : stack.getAll()) {
+                    if (i.getId() == id) {
+                        existingItem = i;
+                        break;
+                    }
+                }
+
+                if (existingItem != null) {
+                    existingItem.setName(request.getParameter("name"));
+                    existingItem.setCategory(request.getParameter("category"));
+                    existingItem.setStock(Integer.parseInt(request.getParameter("stock")));
+                    existingItem.setPrice(Double.parseDouble(request.getParameter("price")));
+                    existingItem.setItemId(request.getParameter("itemId"));
+                    existingItem.setExpiryDate(request.getParameter("expiryDate"));
+                    existingItem.setLastUpdatedDate(dateFormat.format(new Date()));
 
                     Part filePart = request.getPart("image");
                     if (filePart != null && filePart.getSize() > 0) {
-                        String imagePath = saveImage(filePart, item.getItemId());
-                        item.setImagePath(imagePath);
-                    }                    LOGGER.info("Updated item: " + item.getName());
+                        String imagePath = saveImage(filePart, existingItem.getItemId());
+                        existingItem.setImagePath(imagePath);
+                    }
 
-                    // Log the inventory update activity
-                    ActivityLogger.logInventoryAction(request, "updated", item.getName(), item.getStock());
-                }} else if ("Delete".equals(action)) {                int id = Integer.parseInt(request.getParameter("id"));
+                    // Move updated item to top of stack to simulate latest update on top
+                    stack.moveToTop(existingItem);
 
-                // Get item name before deletion for logging
-                Item itemToDelete = items.stream()
-                        .filter(i -> i.getId() == id)
-                        .findFirst()
-                        .orElse(null);
+                    LOGGER.info("Updated item: " + existingItem.getName());
+                    ActivityLogger.logInventoryAction(request, "updated", existingItem.getName(), existingItem.getStock());
+                }
+            } else if ("Delete".equals(action)) {
+                int id = Integer.parseInt(request.getParameter("id"));
+                Item itemToDelete = null;
+
+                for (Item i : stack.getAll()) {
+                    if (i.getId() == id) {
+                        itemToDelete = i;
+                        break;
+                    }
+                }
 
                 if (itemToDelete != null) {
-                    String itemName = itemToDelete.getName();
-                    items.removeIf(item -> item.getId() == id);
-                    LOGGER.info("Deleted item with ID: " + id);
+                    stack.getAll().remove(itemToDelete); // Remove from underlying list
+                    // But better remove from stack directly:
+                    // Since Stack class does not have remove, use getAll(), remove and reconstruct stack:
+                    Stack<Item> newStack = new Stack<>();
+                    for (Item i : stack.getAll()) {
+                        if (i.getId() != id) {
+                            newStack.push(i);
+                        }
+                    }
+                    stack = newStack;
 
-                    // Log the inventory deletion activity
-                    ActivityLogger.logInventoryAction(request, "deleted", itemName, null);
-                } else {
-                    items.removeIf(item -> item.getId() == id);
                     LOGGER.info("Deleted item with ID: " + id);
+                    ActivityLogger.logInventoryAction(request, "deleted", itemToDelete.getName(), null);
                 }
             }
 
-            saveItemsToFile(items);
+            saveItemsToFile(stack);
 
         } catch (NumberFormatException e) {
             LOGGER.warning("Invalid number format: " + e.getMessage());
             request.setAttribute("error", "Invalid number format in the form. Please check your input.");
-            request.setAttribute("items", items);
+            request.setAttribute("items", stack.getAll());
             request.getRequestDispatcher("/inventory.jsp").forward(request, response);
             return;
         } catch (Exception e) {
             LOGGER.severe("Error processing inventory action: " + e.getMessage());
             request.setAttribute("error", "An error occurred while processing your request.");
-            request.setAttribute("items", items);
+            request.setAttribute("items", stack.getAll());
             request.getRequestDispatcher("/inventory.jsp").forward(request, response);
             return;
         }
@@ -288,5 +304,3 @@ public class InventoryServlet extends HttpServlet {
         return result;
     }
 }
-
-
