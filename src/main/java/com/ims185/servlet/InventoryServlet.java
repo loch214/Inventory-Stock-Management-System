@@ -258,13 +258,34 @@ public class InventoryServlet extends HttpServlet {
     }
 
     private List<Item> sortItemsByExpiryDate(List<Item> items) {
-        return items.stream()
-                .sorted((a, b) -> {
-                    String dateA = a.getExpiryDate() != null ? a.getExpiryDate() : "9999-12-31";
-                    String dateB = b.getExpiryDate() != null ? b.getExpiryDate() : "9999-12-31";
-                    return dateA.compareTo(dateB);
-                })
-                .collect(Collectors.toList());
+        if (items.size() <= 1) return items;
+
+        int mid = items.size() / 2;
+        List<Item> left = sortItemsByExpiryDate(new ArrayList<>(items.subList(0, mid)));
+        List<Item> right = sortItemsByExpiryDate(new ArrayList<>(items.subList(mid, items.size())));
+
+        return merge(left, right);
+    }
+
+    private List<Item> merge(List<Item> left, List<Item> right) {
+        List<Item> result = new ArrayList<>();
+        int i = 0, j = 0;
+
+        while (i < left.size() && j < right.size()) {
+            String dateA = left.get(i).getExpiryDate() != null ? left.get(i).getExpiryDate() : "9999-12-31";
+            String dateB = right.get(j).getExpiryDate() != null ? right.get(j).getExpiryDate() : "9999-12-31";
+
+            if (dateA.compareTo(dateB) <= 0) {
+                result.add(left.get(i++));
+            } else {
+                result.add(right.get(j++));
+            }
+        }
+
+        while (i < left.size()) result.add(left.get(i++));
+        while (j < right.size()) result.add(right.get(j++));
+
+        return result;
     }
 }
 
