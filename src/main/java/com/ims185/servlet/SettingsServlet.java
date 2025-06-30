@@ -1,6 +1,5 @@
 package com.ims185.servlet;
 
-import com.ims185.model.User;
 import com.ims185.config.FilePaths;
 import com.ims185.util.ActivityLogger;
 import jakarta.servlet.ServletException;
